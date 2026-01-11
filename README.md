@@ -68,16 +68,33 @@ Optional:
 
 ### 2) Ingest docs
 
+This repo includes two document corpora you can ingest:
+
+- `docs/sample/` (small, fast demo corpus)
+- `docs/mariadb-docs/` (full MariaDB documentation, pulled in as a git submodule)
+
 Minimal ingestor:
 
 ```bash
-.venv/bin/python run_cli.py ingest-docs --path ./docs
+.venv/bin/python run_cli.py ingest-docs --path ./docs/sample
+```
+
+MariaDB docs corpus (submodule):
+
+```bash
+.venv/bin/python run_cli.py ingest-docs --path ./docs/mariadb-docs
 ```
 
 LlamaIndex ingestor (optional):
 
 ```bash
-MARIADB_AI_AUDIT_DEBUG=1 OPENAI_EMBED_BATCH_SIZE=32 .venv/bin/python run_cli.py ingest-docs-llamaindex --path ./docs
+MARIADB_AI_AUDIT_DEBUG=1 OPENAI_EMBED_BATCH_SIZE=32 .venv/bin/python run_cli.py ingest-docs-llamaindex --path ./docs/sample
+```
+
+LlamaIndex + MariaDB docs corpus (submodule):
+
+```bash
+MARIADB_AI_AUDIT_DEBUG=1 OPENAI_EMBED_BATCH_SIZE=32 .venv/bin/python run_cli.py ingest-docs-llamaindex --path ./docs/mariadb-docs
 ```
 
 ### 3) Start the MCP server

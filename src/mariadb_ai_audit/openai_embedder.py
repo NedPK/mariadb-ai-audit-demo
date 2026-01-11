@@ -68,9 +68,22 @@ class OpenAIEmbedder:
         if not texts:
             return []
 
-        res = self._client.embeddings.create(model=self._model, input=texts)
-        # Keep ordering stable: OpenAI returns results aligned to inputs.
-        return [item.embedding for item in res.data]
+        batch_size_raw = os.getenv("OPENAI_EMBED_BATCH_SIZE")
+        try:
+            batch_size = int(batch_size_raw) if batch_size_raw else 96
+        except ValueError:
+            batch_size = 96
+
+        if batch_size <= 0:
+            batch_size = len(texts)
+
+        out: list[list[float]] = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i : i + batch_size]
+            res = self._client.embeddings.create(model=self._model, input=batch)
+            # Keep ordering stable: OpenAI returns results aligned to inputs.
+            out.extend([item.embedding for item in res.data])
+        return out
 
 
 def build_openai_embedder() -> OpenAIEmbedder:

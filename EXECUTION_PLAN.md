@@ -114,6 +114,8 @@ Expected exposures for one request_id:
     - Chunks text deterministically (stable chunk ids)
     - Generates embeddings
     - Writes chunks + embeddings to MariaDB
+  - Recommended LlamaIndex ingestion command (with progress + batching):
+    - `MARIADB_AI_AUDIT_DEBUG=1 OPENAI_EMBED_BATCH_SIZE=32 python run_cli.py ingest-docs-llamaindex --path ./docs`
   - Optional MCP helper tool: `ingest_docs(path, ...)` (only if it helps the demo).
 - **Tests**:
   - Unit test: chunking stability (same input => same chunk boundaries/ids).

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import sys
 from pathlib import Path
 
 from pymysql import MySQLError
@@ -8,6 +10,20 @@ from mariadb_ai_audit.config import MariaDBConfig
 from mariadb_ai_audit.db import connection
 from mariadb_ai_audit.ingest import IngestError, IngestResult
 from mariadb_ai_audit.openai_embedder import OpenAIEmbedder
+
+
+def _debug_enabled() -> bool:
+    value = os.getenv("MARIADB_AI_AUDIT_DEBUG")
+    if value is None:
+        return False
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _log(msg: str) -> None:
+    if not _debug_enabled():
+        return
+    sys.stderr.write(f"[ingest-llamaindex] {msg}\n")
+    sys.stderr.flush()
 
 
 def _vector_literal(vec: list[float]) -> str:
@@ -51,27 +67,6 @@ def ingest_docs_llamaindex(
         raise IngestError(f"No matching files found under: {docs_path}")
 
     splitter = TokenTextSplitter(chunk_size=chunk_tokens, chunk_overlap=overlap_tokens)
-    nodes = splitter.get_nodes_from_documents(documents)
-    if not nodes:
-        raise IngestError("No chunks produced")
-
-    by_source: dict[str, list[str]] = {}
-    for n in nodes:
-        text = getattr(n, "text", None)
-        if not isinstance(text, str) or not text.strip():
-            continue
-
-        md = getattr(n, "metadata", None)
-        source = None
-        if isinstance(md, dict):
-            source = md.get("file_path") or md.get("filename") or md.get("source")
-        if not source:
-            source = "unknown"
-
-        by_source.setdefault(str(source), []).append(text)
-
-    if not by_source:
-        raise IngestError("No chunks produced")
 
     doc_count = 0
     chunk_count = 0
@@ -79,20 +74,47 @@ def ingest_docs_llamaindex(
     with connection(cfg) as conn:
         cur = conn.cursor()
         try:
-            for source, chunk_texts in by_source.items():
-                chunk_texts = [c for c in chunk_texts if c.strip()]
+            _log(
+                f"loaded_documents={len(documents)} chunk_tokens={chunk_tokens} overlap_tokens={overlap_tokens}"
+            )
+
+            for doc_i, doc in enumerate(documents, start=1):
+                text = getattr(doc, "text", None)
+                if not isinstance(text, str) or not text.strip():
+                    continue
+
+                md = getattr(doc, "metadata", None)
+                source = None
+                if isinstance(md, dict):
+                    source = (
+                        md.get("file_path") or md.get("filename") or md.get("source")
+                    )
+                if not source:
+                    source = "unknown"
+
+                _log(f"split start doc={doc_i}/{len(documents)} source={source}")
+                nodes = splitter.get_nodes_from_documents([doc])
+                chunk_texts: list[str] = []
+                for n in nodes:
+                    ntext = getattr(n, "text", None)
+                    if isinstance(ntext, str) and ntext.strip():
+                        chunk_texts.append(ntext)
+
                 if not chunk_texts:
                     continue
 
-                cur.execute(
-                    "INSERT INTO documents (source) VALUES (%s)",
-                    (source,),
+                _log(
+                    f"embed start doc={doc_i}/{len(documents)} chunks={len(chunk_texts)}"
                 )
-                document_id = cur.lastrowid
-
                 vectors = embedder.embed_texts(chunk_texts)
                 if len(vectors) != len(chunk_texts):
                     raise IngestError("Embedding count does not match chunk count")
+
+                cur.execute(
+                    "INSERT INTO documents (source) VALUES (%s)",
+                    (str(source),),
+                )
+                document_id = cur.lastrowid
 
                 rows: list[tuple[int, int, str, str]] = []
                 for idx, (chunk_text, vec) in enumerate(zip(chunk_texts, vectors)):
@@ -110,10 +132,12 @@ def ingest_docs_llamaindex(
                     rows,
                 )
 
+                conn.commit()
                 doc_count += 1
                 chunk_count += len(rows)
-
-            conn.commit()
+                _log(
+                    f"committed doc={doc_i}/{len(documents)} documents={doc_count} chunks={chunk_count}"
+                )
         except MySQLError as exc:
             conn.rollback()
             raise IngestError(str(exc)) from exc

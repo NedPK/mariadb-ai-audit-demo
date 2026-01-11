@@ -143,7 +143,7 @@ Expected:
 Bonus (AI framework integration):
 
 ```bash
-.venv/bin/python run_cli.py ingest-docs-llamaindex --path ./docs
+MARIADB_AI_AUDIT_DEBUG=1 OPENAI_EMBED_BATCH_SIZE=32 .venv/bin/python run_cli.py ingest-docs-llamaindex --path ./docs
 ```
 
 Notes:

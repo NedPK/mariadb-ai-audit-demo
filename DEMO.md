@@ -275,6 +275,49 @@ Expected:
 - Response includes `request_id`.
 - Response includes the answer plus the retrieved `chunks`.
 
+## Filtering functionality (exposure policy + DLP-on-send)
+
+This demo has an application-layer “filtering” step between retrieval and the LLM.
+
+It is intentionally compliance-first:
+
+- Retrieved chunks are **candidates** (what MariaDB found).
+- A smaller, safer subset is **exposed** (what the app allows the LLM to see).
+
+Filtering behavior:
+
+- **Input sanitization (question)**: the user question is scanned/redacted before it is sent to external services (embeddings/chat). If high-severity patterns are present and blocking is enabled, the request is blocked before retrieval.
+- **Subset selection**: limit how many chunks are exposed in total, and cap how many chunks can come from the same document.
+- **Token budgeting**: enforce global context budget and per-chunk token limits.
+- **DLP-on-send**: scan the exact text being exposed; redact low/medium severity patterns; optionally **block** exposure on high-severity markers.
+
+Environment variables:
+
+- `MARIADB_AI_DLP_ON_SEND=1` (default) enables redaction.
+- `MARIADB_AI_DLP_BLOCK_ON_HIGH=1` blocks if a high-severity marker is detected.
+- `MARIADB_AI_MAX_CONTEXT_TOKENS` (default `2500`) total context token budget.
+- `MARIADB_AI_MAX_TOKENS_PER_CHUNK` (default `600`) per-chunk cap.
+- `MARIADB_AI_MAX_CHUNKS_EXPOSED` (default `5`) total number of chunks exposed.
+- `MARIADB_AI_PER_DOCUMENT_CAP` (default `2`) per-document exposure cap.
+
+How to demo blocking with the sample “sensitive” doc:
+
+1. Ensure `docs/sample/sensitive_demo.md` is ingested.
+2. Run the MCP tool `ask_ai` with a question containing the keyword:
+   - `DEMO_SENSITIVE_PRIVATE_KEY_WIDGET`
+3. Enable blocking:
+
+```dotenv
+MARIADB_AI_DLP_ON_SEND=1
+MARIADB_AI_DLP_BLOCK_ON_HIGH=1
+```
+
+Expected:
+
+- The tool call fails with a policy message (blocked before calling the LLM).
+- The audit trail still records a `policy_decision` exposure for that `request_id`.
+- No `llm_context` / `llm_answer` exposures are written for blocked requests.
+
 ### Scene 3 (2–3 min) — Explainability + audit trail (still via MCP)
 
 What you say:

@@ -1,41 +1,78 @@
-# Execution Plan — Explainable AI on MariaDB Cloud (MCP + Vector Search)
+# Execution Plan — Auditable RAG on MariaDB (MCP + Vector Search + Streamlit)
 
 ## 0) Guiding Constraints (Non‑Negotiables)
 
-- **System of record**: MariaDB Cloud is the only system of record for documents, embeddings, queries, and traces.
+- **System of record**: MariaDB Cloud is the only system of record for documents, embeddings, queries, and the application audit trail.
 - **Vector search**: All similarity search is executed in MariaDB (no external vector DB).
 - **RAG context**: The model may use only retrieved chunks as context; never fabricate sources.
-- **Traceability**: Every interaction is tied to a `trace_id` that can be used to reproduce “what was retrieved and why”.
-- **MCP-first**: MCP tools are the primary interface (no web UI unless explicitly requested).
+- **Traceability**: Every interaction is tied to a `request_id` in MariaDB that can be used to reproduce “what was retrieved and why”.
+- **MCP-first**: MCP tools are the primary interface; Streamlit is an optional UI over the same MCP tools.
 - **Demo-first**: Clarity, correctness, and explainability over completeness.
 
 ## 1) Demo Narrative (5–10 minutes)
 
 - **Scene A: Ask a question**
-  - User calls `ask_ai(question, ...)`.
-  - System stores a new `trace_id`.
-  - System performs vector search in MariaDB and returns an answer based strictly on retrieved chunks.
-- **Scene B: Explain the answer**
-  - User calls `explain_answer(trace_id)`.
-  - System shows the retrieved chunks, similarity scores, and how they were used.
-- **Scene C: Search past questions**
-  - User calls `search_past_questions(query)`.
-  - System runs vector search over prior questions/prompts (stored in MariaDB) and returns similar past interactions.
+  - User calls `ask_ai(question, k, user_id, feature)`.
+  - System creates a new `request_id` in MariaDB.
+  - System performs vector search in MariaDB and returns an answer grounded strictly in retrieved chunks.
+- **Scene B: Audit the answer (forensics)**
+  - User calls `list_audit_requests(limit)` then `get_audit_details(request_id)`.
+  - System shows:
+    - candidates (ranked chunks + similarity scores)
+    - exposures (what was actually exposed to the LLM)
+    - policy decision (DLP stats and block reason when applicable)
 
 ## 2) Architecture Overview (What we will build)
 
 - **MCP Server**
-  - Exposes tools: `ask_ai`, `explain_answer`, `search_past_questions`.
-  - Minimal helpers only if needed (e.g., `ingest_docs`, `healthcheck`).
+  - Exposes tools: `ask_ai`, `list_audit_requests`, `get_audit_details`.
+  - Uses MariaDB as the system of record for docs, vectors, and audit trail.
+- **Streamlit UI (optional)**
+  - Calls MCP tools over HTTP.
+  - Provides Ask AI and Audit Browser views.
 - **MariaDB schema**
   - Tables for:
-    - Document chunks + embeddings
-    - Traces (per interaction) with `trace_id`
-    - Retrieval events (per trace): chunk ids + similarity scores + rank
-    - Prompts/questions + embeddings (for `search_past_questions`)
+    - `documents`, `chunks`
+    - `retrieval_requests`, `retrieval_candidates`
+    - `retrieval_exposures`, `retrieval_exposure_chunks`
 - **Embedding + LLM provider**
   - Pluggable via environment variables.
   - No keys in source control.
+
+## 2.1) Exposure Policy + DLP Blocking (Compliance-first)
+
+This demo intentionally distinguishes between:
+
+- **Candidates**: what MariaDB retrieved (ranked chunks)
+- **Exposures**: what the application allowed to be exposed downstream (especially to the LLM)
+
+Exposure policy behavior:
+
+- **Subset selection**: only a limited number of chunks are exposed (with per-document caps)
+- **Token budgeting**: enforce `MARIADB_AI_MAX_CONTEXT_TOKENS` and `MARIADB_AI_MAX_TOKENS_PER_CHUNK`
+- **DLP-on-send**: scan the exact text being sent; redact low-severity patterns; optionally block on high-severity patterns
+
+Blocking behavior (when enabled with `MARIADB_AI_DLP_BLOCK_ON_HIGH=1`):
+
+- The request is **blocked before calling the LLM**.
+- The audit trail still records a `policy_decision` exposure including:
+  - `blocked: true`
+  - `dlp_categories` (what matched)
+  - `blocked_hit` (which retrieved chunk triggered the block)
+
+Demo marker used for a public repo:
+
+- `DEMO_DLP_BLOCK_MARKER__NOT_A_REAL_SECRET__DO_NOT_USE`
+
+Expected exposures for one request_id:
+
+- **Allowed** request:
+  - `policy_decision`
+  - `llm_context`
+  - `candidates_json`
+
+- **Blocked** request:
+  - `policy_decision` only (no `llm_context`)
 
 ## 3) Implementation Milestones (Step-by-step; code + tests each step)
 
@@ -54,19 +91,19 @@
 
 ### Milestone 2 — MariaDB schema + migrations/bootstrap
 
-- **Outcome**: Database tables exist and enforce traceability.
+- **Outcome**: Database tables exist and enforce request-level traceability.
 - **Deliverables**:
-  - SQL schema (or simple migration script) creating:
-    - `documents` (optional) / `chunks`
-    - `chunk_embeddings` or `chunks` with embedding column
-    - `traces`
-    - `trace_retrievals` (trace_id, chunk_id, score, rank, metadata)
-    - `questions` (question text, embedding, created_at, trace_id)
+  - SQL schema creating:
+    - `documents`, `chunks` (with `VECTOR` embeddings)
+    - `retrieval_requests` (request_id, user_id, feature, query, k, model, timestamps)
+    - `retrieval_candidates` (rank, chunk_id, score, document_id, chunk_index, content)
+    - `retrieval_exposures` (kind, content, chunks_exposed)
+    - `retrieval_exposure_chunks` (chunk-level linkage for each exposure)
   - Idempotent schema setup command.
 - **Tests**:
   - Integration test: schema creation and basic inserts.
 - **Acceptance criteria**:
-  - Given a `trace_id`, you can query and list retrieval rows.
+  - Given a `request_id`, you can query and list candidates and exposures.
 
 ### Milestone 3 — Document ingestion (chunks + embeddings)
 
@@ -99,52 +136,52 @@
 - **Acceptance criteria**:
   - No external retrieval paths; retrieval is visibly “from MariaDB”.
 
-### Milestone 5 — `ask_ai` MCP tool (RAG + trace_id)
+### Milestone 5 — `ask_ai` MCP tool (RAG + request_id)
 
-- **Outcome**: Full RAG flow: store trace, retrieve chunks, generate answer based on context only.
+- **Outcome**: Full RAG flow: store request, retrieve chunks, generate answer based on context only.
 - **Deliverables**:
   - `ask_ai` tool that:
-    - Creates `trace_id`
-    - Stores the question (+ optional embedding)
-    - Retrieves top‑K chunks from MariaDB
-    - Stores retrieval events (`trace_retrievals`)
-    - Calls LLM with a strict prompt template that:
-      - forbids using non-retrieved knowledge
-      - returns an answer and optionally short citations (chunk ids)
-    - Returns: `trace_id`, answer, and minimal metadata
+    - Requires `user_id` (for auditability) and accepts an optional `feature` label
+    - Stores the request in `retrieval_requests` and candidates in `retrieval_candidates`
+    - Applies an exposure policy before calling the LLM:
+      - limits which chunks are exposed
+      - enforces token budgets
+      - runs DLP-on-send and can block on high-severity patterns
+    - Logs exposures to `retrieval_exposures`:
+      - `policy_decision` (DLP stats, block reason, blocked_hit)
+      - `llm_context` (when allowed)
+      - `candidates_json`
+    - Returns: `request_id`, answer, and exposed chunks
 - **Tests**:
   - Unit test: prompt template contains explicit constraints.
   - Integration test: `ask_ai` stores trace + retrieval rows.
 - **Acceptance criteria**:
-  - For a known query, `trace_retrievals` rows match returned chunks.
+  - For a known query, `retrieval_candidates` rows match returned candidates.
+  - Exposures reflect what was actually sent to the LLM.
 
-### Milestone 6 — `explain_answer` MCP tool (explainability)
+### Milestone 6 — Audit browser tools (`list_audit_requests`, `get_audit_details`)
 
-- **Outcome**: You can explain any answer by `trace_id`.
+- **Outcome**: You can browse recent requests and drill into one `request_id`.
 - **Deliverables**:
-  - `explain_answer(trace_id)` tool that returns:
-    - original question
-    - retrieved chunks (text, chunk_id)
-    - similarity scores + rank
-    - (optional) final LLM prompt context block used
-- **Tests**:
-  - Integration test: calling `explain_answer` after `ask_ai` returns consistent data.
+  - `list_audit_requests(limit)` returns recent `retrieval_requests`.
+  - `get_audit_details(request_id)` returns the full audit bundle:
+    - request metadata
+    - candidates
+    - exposures (including policy_decision)
 - **Acceptance criteria**:
-  - Explanation contains explicit chunk references and scores.
+  - A single `request_id` ties together the request, candidates, and exposures.
 
-### Milestone 7 — `search_past_questions` MCP tool (semantic search over history)
+### Milestone 7 — Streamlit UI (optional)
 
-- **Outcome**: You can semantically search prior prompts/questions stored in MariaDB.
+- **Outcome**: A copilot-like UI over MCP.
 - **Deliverables**:
-  - Store question embeddings for each `ask_ai` call.
-  - `search_past_questions(query, top_k)` tool:
-    - embeds query
-    - runs vector search against stored question embeddings
-    - returns prior questions + trace_ids + timestamps
-- **Tests**:
-  - Integration test: after multiple `ask_ai` calls, search returns nearest questions.
-- **Acceptance criteria**:
-  - Result items contain `trace_id` enabling immediate `explain_answer` follow-up.
+  - Ask AI view:
+    - requires user to enter `user_id` before submitting
+    - `feature` is a demo-only selectbox label stored in the audit trail
+    - `k` is explained as “Top-k chunks to retrieve”
+  - Audit Browser view:
+    - request_id is the central control
+    - exposures are selectable and show metadata + content
 
 ### Milestone 8 — Demo script + guardrails
 
@@ -154,17 +191,17 @@
   - Guardrails:
     - clear errors when DB is empty (e.g., no chunks ingested)
     - safe defaults (`top_k`, max context length)
-    - logs include `trace_id`
+    - logs include `request_id`
 - **Tests**:
-  - Minimal end-to-end smoke test: ingest -> ask_ai -> explain_answer -> search.
+  - Minimal end-to-end smoke test: ingest -> ask_ai -> list_audit_requests -> get_audit_details.
 - **Acceptance criteria**:
   - Demo can be executed end-to-end without manual DB poking.
 
 ## 4) Data Contracts (Minimal)
 
-- **`trace_id`**: UUID string returned by `ask_ai` and accepted by `explain_answer`.
+- **`request_id`**: integer identifier returned by `ask_ai` and used to join request, candidates, and exposures.
 - **Chunk identity**: stable `chunk_id` (string or integer) used everywhere (retrieval logs, explanations).
-- **Retrieval record**: `{trace_id, chunk_id, score, rank, created_at}`.
+- **Candidate record**: `{request_id, chunk_id, score, rank, created_at}`.
 
 ## 5) Operational Checklist (Before demo)
 
@@ -186,11 +223,11 @@
   - schema applied
   - demo corpus ingested
 - **Smoke run**:
-  - call `ask_ai` once; then `explain_answer(trace_id)`; then `search_past_questions`.
+  - call `ask_ai` once; then inspect via `list_audit_requests` / `get_audit_details`.
 
 ## 6) Definition of Done
 
 - **Working MCP-driven RAG flow** with MariaDB vector search.
-- **Explainability**: `explain_answer(trace_id)` returns retrieved chunks and similarity scores.
-- **Traceability**: All stored and queryable in MariaDB by `trace_id`.
+- **Explainability**: `get_audit_details(request_id)` returns candidates and exposures.
+- **Traceability**: All stored and queryable in MariaDB by `request_id`.
 - **Demo-ready**: a clean, repeatable 5–10 minute run.

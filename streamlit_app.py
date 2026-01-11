@@ -247,7 +247,21 @@ with page_tabs[0]:
         height=120,
     )
 
-    col_k, col_user = st.columns([1, 1])
+    st.info(
+        "user_id is required for auditing. Ask AI is disabled until you provide it."
+    )
+
+    col_user, col_k = st.columns([2, 1])
+    with col_user:
+        user_id = st.text_input(
+            "user_id (REQUIRED)",
+            value="",
+            placeholder="e.g. alice@company.com",
+            help=(
+                "Required for the application-level audit trail. We'll log it with each retrieval request so you can "
+                "trace who asked what and when."
+            ),
+        )
     with col_k:
         k = st.number_input(
             "Top-k chunks to retrieve",
@@ -258,16 +272,6 @@ with page_tabs[0]:
             help=(
                 "How many chunks MariaDB vector search returns before the exposure policy runs. "
                 "Higher k can improve recall, but increases context size and the chance of hitting DLP blocks."
-            ),
-        )
-    with col_user:
-        user_id = st.text_input(
-            "user_id (required)",
-            value="",
-            placeholder="e.g. alice@company.com",
-            help=(
-                "Required for the application-level audit trail. We'll log it with each retrieval request so you can "
-                "trace who asked what and when."
             ),
         )
 

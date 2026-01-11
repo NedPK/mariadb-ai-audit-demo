@@ -51,7 +51,8 @@ class OpenAIChatClient:
                     "role": "system",
                     "content": (
                         "You are a careful assistant. Answer the user's question using ONLY the provided context. "
-                        "If the context does not contain the answer, say you do not know."
+                        "If the context does not contain the answer, respond in ONE LINE with brief justification, "
+                        "in the format: 'I don't know — <reason based on the missing context>'."
                     ),
                 },
                 {
@@ -62,7 +63,15 @@ class OpenAIChatClient:
             temperature=0.2,
         )
 
-        return (res.choices[0].message.content or "").strip()
+        text = (res.choices[0].message.content or "").strip()
+        if text == "":
+            return "I don't know — the provided context does not contain the answer."
+
+        lowered = text.strip().lower()
+        if lowered in {"i don't know", "i do not know", "unknown", "n/a", "not sure"}:
+            return "I don't know — the provided context does not contain the answer."
+
+        return text
 
 
 def build_openai_chat_client() -> OpenAIChatClient:

@@ -237,7 +237,7 @@ page_tabs = st.tabs(["Ask AI", "Audit Browser"])
 with page_tabs[0]:
     st.markdown('<div class="mdb-section-title">Ask AI</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="mdb-muted">Ask a question. The server retrieves the top-k chunks from MariaDB vector search, then applies an exposure policy before calling the LLM.</div>',
+        '<div class="mdb-muted">You are prompted to ask a question to a MariaDB knowledge base version uploaded to a serverless MariaDB instance in MariaDB Cloud. The server retrieves the top-k chunks from MariaDB vector search, then applies an exposure policy before calling the LLM.</div>',
         unsafe_allow_html=True,
     )
 

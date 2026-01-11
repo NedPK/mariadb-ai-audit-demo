@@ -220,6 +220,13 @@ def ask_ai(
             log_retrieval_exposure(
                 conn=conn,
                 request_id=res.request_id,
+                kind="llm_answer",
+                content=answer,
+                chunks=exposure.exposed_hits,
+            )
+            log_retrieval_exposure(
+                conn=conn,
+                request_id=res.request_id,
                 kind="policy_decision",
                 content=json.dumps(exposure.policy),
                 chunks=exposure.exposed_hits,

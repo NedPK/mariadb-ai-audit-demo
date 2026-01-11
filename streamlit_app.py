@@ -463,6 +463,11 @@ with page_tabs[1]:
                     st.info("No exposures")
                 else:
                     dict_exposures = [e for e in exposures if isinstance(e, dict)]
+                    by_kind: dict[str, list[dict]] = {}
+                    for e in dict_exposures:
+                        kind = e.get("kind")
+                        if isinstance(kind, str) and kind.strip() != "":
+                            by_kind.setdefault(kind, []).append(e)
                     if dict_exposures:
                         st.markdown("##### Inspect exposure")
                         st.caption(
@@ -504,6 +509,33 @@ with page_tabs[1]:
                                 st.code(content)
                             else:
                                 st.write(content)
+
+                            llm_answer = None
+                            llm_items = by_kind.get("llm_answer")
+                            if isinstance(llm_items, list) and llm_items:
+                                llm_answer = llm_items[-1].get("content")
+
+                            policy_why = None
+                            policy_items = by_kind.get("policy_decision")
+                            if isinstance(policy_items, list) and policy_items:
+                                policy_why = policy_items[-1].get("content")
+
+                            st.markdown("##### LLM response")
+                            if isinstance(llm_answer, str) and llm_answer.strip() != "":
+                                st.code(llm_answer)
+                            else:
+                                st.info(
+                                    "No llm_answer exposure found for this request."
+                                )
+
+                            st.markdown("##### Why")
+                            st.caption("Policy metadata captured for this request.")
+                            if isinstance(policy_why, str) and policy_why.strip() != "":
+                                st.code(policy_why)
+                            else:
+                                st.info(
+                                    "No policy_decision exposure found for this request."
+                                )
 
                     # Show a compact table (no huge content column) so `kind` stays visible.
                     table_cols = [

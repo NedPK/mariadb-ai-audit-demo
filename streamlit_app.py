@@ -241,9 +241,13 @@ with page_tabs[0]:
         unsafe_allow_html=True,
     )
 
+    st.info(
+        "Auditing is available in the 'Audit Browser' tab. Use it to review the request_id, candidates, and exposures for each question."
+    )
+
     question = st.text_area(
         "Question",
-        value="does ColumnStore supports online schema changes",
+        value="Does ColumnStore supports online schema changes?",
         height=120,
     )
 

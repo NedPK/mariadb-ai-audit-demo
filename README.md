@@ -18,6 +18,17 @@ A small demo app showing **in-database vector search + auditable RAG** on MariaD
   - Ranked candidates are logged to `retrieval_candidates`.
   - Exposures (what was actually sent downstream) are logged to `retrieval_exposures` and `retrieval_exposure_chunks`.
 
+## Hosted demo (no local install)
+
+If you just want to try the demo UI, open:
+
+- [nedpk-mariadb-ai-audit-demo.streamlit.app](https://nedpk-mariadb-ai-audit-demo.streamlit.app)
+
+The app has two tabs:
+
+- **Ask AI**: submit a question (requires `user_id`). The server retrieves top-k chunks from MariaDB vector search, applies an exposure policy (filtering/DLP), then calls the LLM. The response includes the `request_id` you can audit.
+- **Audit Browser**: browse recent retrieval requests and drill into candidates and exposures (including policy decisions) captured by the application-level audit trail.
+
 ## Repository setup
 
 ### Clone (includes a docs submodule)

@@ -149,9 +149,6 @@ def _render_tool_error(exc: ToolError) -> None:
 
 st.set_page_config(page_title="MariaDB AI Audit", layout="wide")
 
-with st.expander("Runtime settings", expanded=False):
-    st.write({"MCP_MODE": MCP_MODE, "MCP_URL": DEFAULT_MCP_URL})
-
 st.markdown(
     """
 <style>

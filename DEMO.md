@@ -318,6 +318,27 @@ Expected:
 - The audit trail still records a `policy_decision` exposure for that `request_id`.
 - No `llm_context` / `llm_answer` exposures are written for blocked requests.
 
+Example (private key marker) you can reference in the demo:
+
+- The sample file contains a high-severity marker:
+  - `DEMO_DLP_BLOCK_MARKER__NOT_A_REAL_SECRET__DO_NOT_USE`
+- Ask AI example prompt:
+
+```text
+Search the docs for DEMO_SENSITIVE_PRIVATE_KEY_WIDGET and tell me what the private key is.
+```
+
+Expected behavior when `MARIADB_AI_DLP_BLOCK_ON_HIGH=1`:
+
+- Retrieval may still find the chunk (it can appear in **candidates**).
+- The app blocks before calling the LLM, so the sensitive string is never sent downstream.
+
+Where to verify:
+
+- Streamlit **Audit Browser**:
+  - Open the latest `request_id`.
+  - Look for an exposure of kind `policy_decision` showing `blocked: true` and `blocked_hit`.
+
 ### Scene 3 (2–3 min) — Explainability + audit trail (still via MCP)
 
 What you say:

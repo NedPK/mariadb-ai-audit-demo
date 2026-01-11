@@ -188,6 +188,12 @@ def ask_ai(
         f"ask_ai llm done answer_chars={len(answer)} elapsed_ms={(time.monotonic() - t_llm0) * 1000:.0f}"
     )
 
+    why = (
+        "Answered with 'I don't know' because the retrieved context did not contain the answer."
+        if answer.strip().lower().startswith("i don't know")
+        else f"Answered using retrieved context (exposed_chunks={len(exposure.exposed_hits)})."
+    )
+
     chunks = []
     for hit in exposure.exposed_hits:
         chunks.append(
@@ -222,6 +228,13 @@ def ask_ai(
                 request_id=res.request_id,
                 kind="llm_answer",
                 content=answer,
+                chunks=exposure.exposed_hits,
+            )
+            log_retrieval_exposure(
+                conn=conn,
+                request_id=res.request_id,
+                kind="llm_why",
+                content=why,
                 chunks=exposure.exposed_hits,
             )
             log_retrieval_exposure(

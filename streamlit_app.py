@@ -515,10 +515,15 @@ with page_tabs[1]:
                             if isinstance(llm_items, list) and llm_items:
                                 llm_answer = llm_items[-1].get("content")
 
-                            policy_why = None
+                            llm_why = None
+                            llm_why_items = by_kind.get("llm_why")
+                            if isinstance(llm_why_items, list) and llm_why_items:
+                                llm_why = llm_why_items[-1].get("content")
+
+                            policy_meta = None
                             policy_items = by_kind.get("policy_decision")
                             if isinstance(policy_items, list) and policy_items:
-                                policy_why = policy_items[-1].get("content")
+                                policy_meta = policy_items[-1].get("content")
 
                             st.markdown("##### LLM response")
                             if isinstance(llm_answer, str) and llm_answer.strip() != "":
@@ -529,9 +534,21 @@ with page_tabs[1]:
                                 )
 
                             st.markdown("##### Why")
-                            st.caption("Policy metadata captured for this request.")
-                            if isinstance(policy_why, str) and policy_why.strip() != "":
-                                st.code(policy_why)
+                            st.caption(
+                                "Human-readable explanation for why the LLM responded this way."
+                            )
+                            if isinstance(llm_why, str) and llm_why.strip() != "":
+                                st.code(llm_why)
+                            else:
+                                st.info("No llm_why exposure found for this request.")
+
+                            st.markdown("##### Policy metadata")
+                            st.caption("Raw policy metadata captured for this request.")
+                            if (
+                                isinstance(policy_meta, str)
+                                and policy_meta.strip() != ""
+                            ):
+                                st.code(policy_meta)
                             else:
                                 st.info(
                                     "No policy_decision exposure found for this request."

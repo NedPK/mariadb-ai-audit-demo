@@ -223,6 +223,7 @@ st.markdown(
 <div class="mdb-hero">
   <h1>MariaDB AI Audit</h1>
   <p>MariaDB Serverless RAG with auditability: MCP tools power the UI; LlamaIndex enforces safe context.</p>
+  <p><b>New here?</b> Read the <a href="https://github.com/NedPK/mariadb-ai-audit-demo/blob/main/DEMO.md" target="_blank" rel="noopener noreferrer">DEMO.md runbook</a> to understand the demo goals and what to try.</p>
 </div>
 """,
     unsafe_allow_html=True,

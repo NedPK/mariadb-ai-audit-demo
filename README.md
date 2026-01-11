@@ -18,6 +18,17 @@ A small demo app showing **in-database vector search + auditable RAG** on MariaD
   - Ranked candidates are logged to `retrieval_candidates`.
   - Exposures (what was actually sent downstream) are logged to `retrieval_exposures` and `retrieval_exposure_chunks`.
 
+- **Filtering (exposure policy + DLP-on-send)**
+  - Retrieved chunks are **candidates** (what MariaDB found), but only a smaller subset is **exposed** to the LLM.
+  - The app enforces per-document caps and token budgets, redacts common sensitive patterns, and can optionally block on high-severity markers.
+
+- **Explainability / forensics for every answer**
+  - For a given `request_id`, you can inspect what was retrieved (candidates) and what was actually exposed to the LLM (exposures).
+
+- **Optional UI + ingestion paths**
+  - Streamlit UI (Ask AI + Audit Browser) over MCP.
+  - Ingest with a minimal built-in ingestor or an optional LlamaIndex-based pipeline.
+
 ## Hosted demo (no local install)
 
 If you just want to try the demo UI, open:

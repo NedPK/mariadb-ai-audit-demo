@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+import ssl
 from typing import Iterator
 
-import mariadb
+import pymysql
+from pymysql import MySQLError
 
 from mariadb_ai_audit.config import MariaDBConfig
 
@@ -12,32 +14,32 @@ class DatabaseError(RuntimeError):
     pass
 
 
-def connect(cfg: MariaDBConfig) -> mariadb.Connection:
+def connect(cfg: MariaDBConfig) -> pymysql.Connection:
     """Create a new MariaDB connection.
 
     Uses SSL and verifies server certificate. If cfg.database is provided,
     connects with that database selected.
     """
     try:
+        ssl_ctx = ssl.create_default_context()
         kwargs = dict(
             host=cfg.host,
             port=cfg.port,
             user=cfg.user,
             password=cfg.password,
-            ssl=True,
-            ssl_verify_cert=True,
+            ssl=ssl_ctx,
         )
 
         if cfg.database:
             kwargs["database"] = cfg.database
 
-        return mariadb.connect(**kwargs)
-    except mariadb.Error as exc:
+        return pymysql.connect(**kwargs)
+    except MySQLError as exc:
         raise DatabaseError(str(exc)) from exc
 
 
 @contextmanager
-def connection(cfg: MariaDBConfig) -> Iterator[mariadb.Connection]:
+def connection(cfg: MariaDBConfig) -> Iterator[pymysql.Connection]:
     """Context manager that opens and reliably closes a MariaDB connection."""
     conn = connect(cfg)
     try:

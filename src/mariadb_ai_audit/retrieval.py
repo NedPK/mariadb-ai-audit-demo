@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import os
 import sys
 
-import mariadb
+from pymysql import MySQLError
 
 from mariadb_ai_audit.audit import log_retrieval_request, retrieval_audit_enabled
 from mariadb_ai_audit.config import MariaDBConfig
@@ -59,11 +59,11 @@ def search_chunks(
 
     sql = (
         "SELECT id, document_id, chunk_index, "
-        "VEC_DISTANCE_COSINE(embedding, VEC_FromText(?)) AS score, "
+        "VEC_DISTANCE_COSINE(embedding, VEC_FromText(%s)) AS score, "
         "content "
         "FROM chunks "
         "ORDER BY score ASC "
-        "LIMIT ?"
+        "LIMIT %s"
     )
 
     try:
@@ -74,7 +74,7 @@ def search_chunks(
                 rows = cur.fetchall()
             finally:
                 cur.close()
-    except mariadb.Error as exc:
+    except MySQLError as exc:
         raise RetrievalError(str(exc)) from exc
 
     hits: list[ChunkHit] = []

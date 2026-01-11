@@ -3,7 +3,8 @@ from __future__ import annotations
 import os
 from typing import Optional, Protocol
 
-import mariadb
+import pymysql
+from pymysql import MySQLError
 
 
 class ChunkHitLike(Protocol):
@@ -26,7 +27,7 @@ def retrieval_audit_enabled() -> bool:
 
 def log_retrieval_request(
     *,
-    conn: mariadb.Connection,
+    conn: pymysql.Connection,
     user_id: Optional[str],
     feature: Optional[str],
     source: Optional[str],
@@ -50,7 +51,7 @@ def log_retrieval_request(
         try:
             cur.execute(
                 "INSERT INTO retrieval_requests (user_id, feature, source, query, k, embedding_model, query_embedding, candidates_returned) "
-                "VALUES (?, ?, ?, ?, ?, ?, VEC_FromText(?), ?)",
+                "VALUES (%s, %s, %s, %s, %s, %s, VEC_FromText(%s), %s)",
                 (
                     user_id,
                     feature,
@@ -82,7 +83,7 @@ def log_retrieval_request(
 
                 cur.executemany(
                     "INSERT INTO retrieval_candidates (request_id, rank, chunk_id, score, document_id, chunk_index, content) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s)",
                     rows_with_content,
                 )
 
@@ -90,13 +91,13 @@ def log_retrieval_request(
             return request_id
         finally:
             cur.close()
-    except mariadb.Error as exc:
+    except MySQLError as exc:
         raise AuditError(str(exc)) from exc
 
 
 def log_retrieval_exposure(
     *,
-    conn: mariadb.Connection,
+    conn: pymysql.Connection,
     request_id: int,
     kind: str,
     content: str,
@@ -113,7 +114,7 @@ def log_retrieval_exposure(
         cur = conn.cursor()
         try:
             cur.execute(
-                "INSERT INTO retrieval_exposures (request_id, kind, content, chunks_exposed) VALUES (?, ?, ?, ?)",
+                "INSERT INTO retrieval_exposures (request_id, kind, content, chunks_exposed) VALUES (%s, %s, %s, %s)",
                 (request_id, kind, content, len(chunks)),
             )
             exposure_id = int(cur.lastrowid)
@@ -136,7 +137,7 @@ def log_retrieval_exposure(
 
                 cur.executemany(
                     "INSERT INTO retrieval_exposure_chunks (exposure_id, request_id, rank, chunk_id, score, document_id, chunk_index, content) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                     rows,
                 )
 
@@ -144,5 +145,5 @@ def log_retrieval_exposure(
             return exposure_id
         finally:
             cur.close()
-    except mariadb.Error as exc:
+    except MySQLError as exc:
         raise AuditError(str(exc)) from exc

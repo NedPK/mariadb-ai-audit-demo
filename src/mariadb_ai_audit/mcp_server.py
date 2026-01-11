@@ -250,7 +250,7 @@ def list_audit_requests(limit: int = 10) -> list[dict]:
         try:
             cur.execute(
                 "SELECT id, user_id, feature, source, query, k, embedding_model, candidates_returned, created_at "
-                "FROM retrieval_requests ORDER BY id DESC LIMIT ?",
+                "FROM retrieval_requests ORDER BY id DESC LIMIT %s",
                 (limit,),
             )
             rows = cur.fetchall()
@@ -300,7 +300,7 @@ def get_audit_details(request_id: int | None = None) -> AuditDetails:
 
             cur.execute(
                 "SELECT id, user_id, feature, source, query, k, embedding_model, candidates_returned, created_at "
-                "FROM retrieval_requests WHERE id = ?",
+                "FROM retrieval_requests WHERE id = %s",
                 (request_id,),
             )
             req = cur.fetchone()
@@ -321,7 +321,7 @@ def get_audit_details(request_id: int | None = None) -> AuditDetails:
 
             cur.execute(
                 "SELECT rank, chunk_id, score, document_id, chunk_index, content "
-                "FROM retrieval_candidates WHERE request_id = ? ORDER BY rank",
+                "FROM retrieval_candidates WHERE request_id = %s ORDER BY rank",
                 (request_id,),
             )
             cand_rows = cur.fetchall()
@@ -340,7 +340,7 @@ def get_audit_details(request_id: int | None = None) -> AuditDetails:
 
             cur.execute(
                 "SELECT id, request_id, kind, chunks_exposed, created_at, content "
-                "FROM retrieval_exposures WHERE request_id = ? ORDER BY id",
+                "FROM retrieval_exposures WHERE request_id = %s ORDER BY id",
                 (request_id,),
             )
             exp_rows = cur.fetchall()

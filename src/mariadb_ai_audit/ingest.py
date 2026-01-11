@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import mariadb
+from pymysql import MySQLError
 
 from mariadb_ai_audit.config import MariaDBConfig
 from mariadb_ai_audit.db import connection
@@ -118,7 +118,7 @@ def ingest_docs(
 
                 rel = str(path)
                 cur.execute(
-                    "INSERT INTO documents (source) VALUES (?)",
+                    "INSERT INTO documents (source) VALUES (%s)",
                     (rel,),
                 )
                 document_id = cur.lastrowid
@@ -139,7 +139,7 @@ def ingest_docs(
                     )
 
                 cur.executemany(
-                    "INSERT INTO chunks (document_id, chunk_index, content, embedding) VALUES (?, ?, ?, VEC_FromText(?))",
+                    "INSERT INTO chunks (document_id, chunk_index, content, embedding) VALUES (%s, %s, %s, VEC_FromText(%s))",
                     rows,
                 )
 
@@ -147,7 +147,7 @@ def ingest_docs(
                 chunk_count += len(rows)
 
             conn.commit()
-        except mariadb.Error as exc:
+        except MySQLError as exc:
             conn.rollback()
             raise IngestError(str(exc)) from exc
         except Exception:

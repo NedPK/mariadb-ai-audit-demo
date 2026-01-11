@@ -112,6 +112,7 @@ Default MCP endpoint:
 
 - `.env.local` is intentionally **gitignored**. Do not commit API keys or DB passwords.
 - `docs/sample/sensitive_demo.md` contains demo “sensitive” content to exercise DLP blocking. If you publish this repo publicly, GitHub secret scanning may flag certain patterns (even if they are fake).
+- The demo uses `PyMySQL` (pure Python) for MariaDB connectivity to keep deployments simple (e.g. Streamlit Cloud) and avoid native `mariadb_config` build dependencies.
 
 ## Demo runbook
 

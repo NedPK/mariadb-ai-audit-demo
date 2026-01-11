@@ -12,14 +12,34 @@ from fastmcp.client.transports import StreamableHttpTransport
 from mcp.shared._httpx_utils import create_mcp_http_client
 
 
+def _secret_get(name: str) -> object | None:
+    try:
+        secrets = st.secrets  # type: ignore[attr-defined]
+    except Exception:
+        return None
+
+    try:
+        if name in secrets:
+            return secrets.get(name)
+    except Exception:
+        pass
+
+    for section in ("general", "env", "settings"):
+        try:
+            bucket = secrets.get(section)
+        except Exception:
+            bucket = None
+        if isinstance(bucket, dict) and name in bucket:
+            return bucket.get(name)
+
+    return None
+
+
 def _setting(name: str, default: str) -> str:
     v = os.getenv(name)
     if v is not None and str(v).strip() != "":
         return str(v)
-    try:
-        sv = st.secrets.get(name)  # type: ignore[attr-defined]
-    except Exception:
-        sv = None
+    sv = _secret_get(name)
     if sv is None:
         return default
     return str(sv)
@@ -115,6 +135,9 @@ def _render_tool_error(exc: ToolError) -> None:
 
 
 st.set_page_config(page_title="MariaDB AI Audit", layout="wide")
+
+with st.expander("Runtime settings", expanded=False):
+    st.write({"MCP_MODE": MCP_MODE, "MCP_URL": DEFAULT_MCP_URL})
 
 st.markdown(
     """

@@ -1,5 +1,7 @@
 import asyncio
 import os
+import sys
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -11,6 +13,11 @@ from mcp.shared._httpx_utils import create_mcp_http_client
 
 
 DEFAULT_MCP_URL = os.getenv("MCP_URL", "http://127.0.0.1:8000/mcp")
+MCP_MODE = os.getenv("MCP_MODE", "http").strip().lower()
+
+_SRC = Path(__file__).resolve().parent / "src"
+if MCP_MODE == "direct" and str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
 
 
 def _run(coro):
@@ -44,6 +51,21 @@ def _structured_result(res: object) -> Any:
 
 
 async def _call_tool(mcp_url: str, name: str, args: dict) -> Any:
+    if MCP_MODE == "direct":
+        from mariadb_ai_audit.mcp_server import get_audit_details, list_audit_requests
+        from mariadb_ai_audit.mcp_server import ask_ai as ask_ai_tool
+
+        def _direct_call() -> Any:
+            if name == "ask_ai":
+                return ask_ai_tool(**args)
+            if name == "list_audit_requests":
+                return list_audit_requests(**args)
+            if name == "get_audit_details":
+                return get_audit_details(**args)
+            raise RuntimeError(f"Unknown tool: {name}")
+
+        return await asyncio.to_thread(_direct_call)
+
     client = _make_client(mcp_url)
     async with client:
         res = await client.call_tool(name, args)

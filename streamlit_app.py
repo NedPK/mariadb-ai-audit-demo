@@ -12,8 +12,21 @@ from fastmcp.client.transports import StreamableHttpTransport
 from mcp.shared._httpx_utils import create_mcp_http_client
 
 
-DEFAULT_MCP_URL = os.getenv("MCP_URL", "http://127.0.0.1:8000/mcp")
-MCP_MODE = os.getenv("MCP_MODE", "http").strip().lower()
+def _setting(name: str, default: str) -> str:
+    v = os.getenv(name)
+    if v is not None and str(v).strip() != "":
+        return str(v)
+    try:
+        sv = st.secrets.get(name)  # type: ignore[attr-defined]
+    except Exception:
+        sv = None
+    if sv is None:
+        return default
+    return str(sv)
+
+
+DEFAULT_MCP_URL = _setting("MCP_URL", "http://127.0.0.1:8000/mcp")
+MCP_MODE = _setting("MCP_MODE", "http").strip().lower()
 
 _SRC = Path(__file__).resolve().parent / "src"
 if MCP_MODE == "direct" and str(_SRC) not in sys.path:

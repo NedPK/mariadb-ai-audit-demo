@@ -1,0 +1,9 @@
+Demo ingestion sample.
+
+This text is intentionally plain and short.
+
+When chunked by tokens with overlap, it should produce one or more chunks depending on the chunk size.
+
+After ingesting, verify counts:
+- SELECT COUNT(*) FROM documents;
+- SELECT COUNT(*) FROM chunks;

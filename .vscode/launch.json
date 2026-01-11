@@ -1,0 +1,62 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Python File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}"
+        },
+        {
+            "name": "Healthcheck (entrypoint)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_cli.py",
+            "args": ["healthcheck"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/.venv/bin/python"
+        },
+        {
+            "name": "OpenAI Healthcheck (entrypoint)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_cli.py",
+            "args": ["openai-healthcheck"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/.venv/bin/python"
+        },
+        {
+            "name": "MCP server debuger",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_mcp_server.py",
+            "console": "integratedTerminal",
+            "python": "${workspaceFolder}/.venv/bin/python"
+        },
+        {
+            "name": "Ingest docs (entrypoint)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/run_cli.py",
+            "args": [
+                "ingest-docs",
+                "--path",
+                "./docs/mariadb-docs",
+                "--chunk-tokens",
+                "200",
+                "--overlap-tokens",
+                "20"
+            ],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "envFile": "${workspaceFolder}/.env.local",
+            "python": "${workspaceFolder}/.venv/bin/python"
+        }           
+    ]
+}

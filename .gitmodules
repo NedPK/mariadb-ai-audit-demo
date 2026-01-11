@@ -1,0 +1,3 @@
+[submodule "docs/mariadb-docs"]
+	path = docs/mariadb-docs
+	url = https://github.com/mariadb-corporation/mariadb-docs.git

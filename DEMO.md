@@ -19,6 +19,26 @@ What you’ll demo:
 - **Ask AI (RAG) with a full audit trail**
   - Functionality: ask a question and get an answer grounded in retrieved chunks
   - Tech: MCP tool `ask_ai` (calls MariaDB vector search + OpenAI chat) and logs exposures
+- **Filtering functionality (exposure policy + DLP-on-send)**
+  - Functionality: an application-layer filtering step between retrieval and the LLM
+    - Retrieved chunks are **candidates** (what MariaDB found)
+    - A smaller, safer subset is **exposed** (what the app allows the LLM to see)
+  - Behavior:
+    - Input sanitization (question): scan/redact before sending to embeddings/chat; optionally block on high-severity patterns
+    - Subset selection: limit total exposed chunks and cap per-document exposure
+    - Token budgeting: enforce global context and per-chunk token limits
+    - DLP-on-send: scan the exact exposed text; redact low/medium patterns; optionally block exposure on high-severity markers
+  - Env vars:
+    - `MARIADB_AI_DLP_ON_SEND=1` (default)
+    - `MARIADB_AI_DLP_BLOCK_ON_HIGH=1`
+    - `MARIADB_AI_MAX_CONTEXT_TOKENS` (default `2500`)
+    - `MARIADB_AI_MAX_TOKENS_PER_CHUNK` (default `600`)
+    - `MARIADB_AI_MAX_CHUNKS_EXPOSED` (default `5`)
+    - `MARIADB_AI_PER_DOCUMENT_CAP` (default `2`)
+  - How to demo blocking:
+    - Ensure `docs/sample/sensitive_demo.md` is ingested
+    - Ask with keyword: `DEMO_SENSITIVE_PRIVATE_KEY_WIDGET`
+    - Enable blocking: `MARIADB_AI_DLP_ON_SEND=1` and `MARIADB_AI_DLP_BLOCK_ON_HIGH=1`
 - **Explainability / forensics for every answer**
   - Functionality: list recent requests and drill into one request_id to see candidates + what was exposed to the LLM
   - Tech: MCP tools `list_audit_requests` + `get_audit_details` returning the full audit bundle from MariaDB:

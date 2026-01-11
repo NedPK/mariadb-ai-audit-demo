@@ -79,7 +79,9 @@ _PHONE_RE = re.compile(
     r"\b(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3}[\s.-]?\d{4}\b"
 )
 _AWS_KEY_RE = re.compile(r"\bAKIA[0-9A-Z]{16}\b")
-_PRIVATE_KEY_RE = re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----")
+_PRIVATE_KEY_RE = re.compile(
+    r"\bDEMO_DLP_BLOCK_MARKER__NOT_A_REAL_SECRET__DO_NOT_USE\b"
+)
 _JWT_RE = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b")
 
 

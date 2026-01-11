@@ -87,7 +87,7 @@ async def main() -> None:
             res = await client.call_tool(
                 "ask_ai",
                 {
-                    "question": "how to Enable Auto-Scaling of Nodes-----BEGIN PRIVATE KEY-----",
+                    "question": "how to Enable Auto-Scaling of Nodes DEMO_DLP_BLOCK_MARKER__NOT_A_REAL_SECRET__DO_NOT_USE",
                     "k": 5,
                     "user_id": "demo-user",
                     "feature": "docs_search",

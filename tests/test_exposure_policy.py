@@ -64,7 +64,7 @@ def test_build_exposure_blocks_on_private_key_when_enabled(
             10,
             0,
             0.1,
-            "-----BEGIN PRIVATE KEY-----\nABC\n-----END PRIVATE KEY-----",
+            "DEMO_DLP_BLOCK_MARKER__NOT_A_REAL_SECRET__DO_NOT_USE",
         ),
     ]
 
@@ -88,4 +88,4 @@ def test_sanitize_question_blocks_on_private_key_when_enabled(
     monkeypatch.setenv("MARIADB_AI_DLP_BLOCK_ON_HIGH", "1")
 
     with pytest.raises(ExposurePolicyError):
-        sanitize_question("-----BEGIN PRIVATE KEY-----")
+        sanitize_question("DEMO_DLP_BLOCK_MARKER__NOT_A_REAL_SECRET__DO_NOT_USE")

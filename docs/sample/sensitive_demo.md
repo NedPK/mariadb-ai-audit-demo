@@ -7,8 +7,6 @@ This file exists only to demo compliance behavior:
 
 Unique demo keyword: DEMO_SENSITIVE_PRIVATE_KEY_WIDGET
 
------BEGIN PRIVATE KEY-----
-MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDemoOnlyNotARealKey
------END PRIVATE KEY-----
+DEMO_DLP_BLOCK_MARKER__NOT_A_REAL_SECRET__DO_NOT_USE
 
 If you can retrieve this chunk, your audit trail should show that exposure was blocked.

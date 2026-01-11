@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 import os
 import sys
 from pathlib import Path
@@ -83,6 +84,18 @@ def _structured_result(res: object) -> Any:
     return sc
 
 
+def _normalize_result(obj: Any) -> Any:
+    if dataclasses.is_dataclass(obj):
+        return dataclasses.asdict(obj)
+    if isinstance(obj, list):
+        return [_normalize_result(x) for x in obj]
+    if isinstance(obj, tuple):
+        return [_normalize_result(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _normalize_result(v) for k, v in obj.items()}
+    return obj
+
+
 async def _call_tool(mcp_url: str, name: str, args: dict) -> Any:
     if MCP_MODE == "direct":
         from mariadb_ai_audit.mcp_server import get_audit_details, list_audit_requests
@@ -97,7 +110,7 @@ async def _call_tool(mcp_url: str, name: str, args: dict) -> Any:
                 return get_audit_details(**args)
             raise RuntimeError(f"Unknown tool: {name}")
 
-        return await asyncio.to_thread(_direct_call)
+        return _normalize_result(await asyncio.to_thread(_direct_call))
 
     client = _make_client(mcp_url)
     async with client:

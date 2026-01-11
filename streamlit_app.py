@@ -241,12 +241,14 @@ with page_tabs[0]:
         unsafe_allow_html=True,
     )
 
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        question = st.text_area(
-            "Question", value="how to Enable Auto-Scaling of Nodes", height=120
-        )
-    with col2:
+    question = st.text_area(
+        "Question",
+        value="does ColumnStore supports online schema changes",
+        height=120,
+    )
+
+    col_k, col_user = st.columns([1, 1])
+    with col_k:
         k = st.number_input(
             "Top-k chunks to retrieve",
             min_value=1,
@@ -258,6 +260,7 @@ with page_tabs[0]:
                 "Higher k can improve recall, but increases context size and the chance of hitting DLP blocks."
             ),
         )
+    with col_user:
         user_id = st.text_input(
             "user_id (required)",
             value="",
@@ -267,30 +270,31 @@ with page_tabs[0]:
                 "trace who asked what and when."
             ),
         )
-        st.caption(
-            "Feature is demo-only metadata: it is stored in the audit trail for grouping/filtering. "
-            "It does not change model behavior."
+
+    st.caption(
+        "Feature is demo-only metadata: it is stored in the audit trail for grouping/filtering. "
+        "It does not change model behavior."
+    )
+    feature_choice = st.selectbox(
+        "Feature (demo label)",
+        options=[
+            "docs_search",
+            "incident_response",
+            "security_review",
+            "compliance_audit",
+            "support_triage",
+            "Custom…",
+        ],
+        index=0,
+    )
+    feature = feature_choice
+    if feature_choice == "Custom…":
+        feature = st.text_input(
+            "Custom feature label",
+            value="",
+            placeholder="e.g. my_feature",
+            help="Optional free-form label stored in the audit trail (demo purposes).",
         )
-        feature_choice = st.selectbox(
-            "Feature (demo label)",
-            options=[
-                "docs_search",
-                "incident_response",
-                "security_review",
-                "compliance_audit",
-                "support_triage",
-                "Custom…",
-            ],
-            index=0,
-        )
-        feature = feature_choice
-        if feature_choice == "Custom…":
-            feature = st.text_input(
-                "Custom feature label",
-                value="",
-                placeholder="e.g. my_feature",
-                help="Optional free-form label stored in the audit trail (demo purposes).",
-            )
 
     can_submit = bool(user_id.strip())
     if not can_submit:

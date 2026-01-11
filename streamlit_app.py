@@ -116,7 +116,7 @@ async def _call_tool(mcp_url: str, name: str, args: dict) -> Any:
     async with client:
         res = await client.call_tool(name, args)
     parsed = _structured_result(res)
-    return res if parsed is None else parsed
+    return _normalize_result(res if parsed is None else parsed)
 
 
 def _render_mcp_connection_error(exc: Exception, *, mcp_url: str) -> None:

@@ -205,6 +205,20 @@ st.markdown(
       radial-gradient(900px 520px at 18% 35%, rgba(0, 168, 232, 0.18), rgba(0,0,0,0) 55%),
       radial-gradient(900px 520px at 60% 25%, rgba(0, 214, 168, 0.12), rgba(0,0,0,0) 60%);
   }
+  .mdb-hero-head { display: flex; align-items: flex-start; gap: 14px; }
+  .mdb-hero-logo {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(10, 26, 44, 0.10);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+  }
+  .mdb-hero-logo img { width: 34px; height: 34px; object-fit: contain; display: block; }
+  .mdb-hero-body { flex: 1 1 auto; min-width: 0; }
   .mdb-hero h1 { margin: 0.15rem 0 0 0; font-size: 1.55rem; line-height: 1.2; color: rgba(8, 18, 32, 0.96); }
   .mdb-hero p { margin: 0.4rem 0 0 0; color: rgba(8, 18, 32, 0.70); max-width: 900px; }
   .mdb-card {
@@ -217,6 +231,11 @@ st.markdown(
   .mdb-section-title { margin: 0; font-size: 1.05rem; font-weight: 650; }
   .mdb-muted { color: rgba(8, 18, 32, 0.68); font-size: 0.9rem; }
   .stButton>button { border-radius: 10px; }
+  .mdb-audit-load .stButton>button {
+    font-size: 1.05rem;
+    padding: 0.55rem 1.1rem;
+    width: 100%;
+  }
 </style>
 """,
     unsafe_allow_html=True,
@@ -228,9 +247,16 @@ st.markdown('<div class="mdb-wrap">', unsafe_allow_html=True)
 st.markdown(
     """
 <div class="mdb-hero">
-  <h1>MariaDB AI Audit</h1>
-  <p>MariaDB Serverless RAG with auditability: MCP tools power the UI; LlamaIndex enforces safe context.</p>
-  <p><b>New here?</b> Read the <a href="https://github.com/NedPK/mariadb-ai-audit-demo/blob/main/DEMO.md" target="_blank" rel="noopener noreferrer">DEMO.md runbook</a> to understand the demo goals and what to try.</p>
+  <div class="mdb-hero-head">
+    <div class="mdb-hero-logo">
+      <img src="https://mariadb.com/wp-content/uploads/2019/11/mariadb-logo_black.svg" alt="MariaDB" />
+    </div>
+    <div class="mdb-hero-body">
+      <h1>MariaDB AI Audit</h1>
+      <p>MariaDB Serverless RAG with auditability: MCP tools power the UI; LlamaIndex enforces safe context.</p>
+      <p><b>New here?</b> Read the <a href="https://github.com/NedPK/mariadb-ai-audit-demo/blob/main/DEMO.md" target="_blank" rel="noopener noreferrer">DEMO.md runbook</a> to understand the demo goals and what to try.</p>
+    </div>
+  </div>
 </div>
 """,
     unsafe_allow_html=True,
@@ -377,7 +403,11 @@ with page_tabs[1]:
         "If you don't see any requests yet, run Ask AI once (auditing must be enabled)."
     )
 
-    col_req, col_actions, col_limit = st.columns([3, 1, 1])
+    st.markdown('<div class="mdb-audit-load">', unsafe_allow_html=True)
+    load = st.button("Load", type="primary")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    col_req, col_auto, col_limit = st.columns([3, 1, 1])
     with col_req:
         request_id_input = st.text_input(
             "Request ID",
@@ -385,8 +415,7 @@ with page_tabs[1]:
             placeholder="Leave empty to use the most recent request",
             help="Optional. If set, Audit Browser will show details for that specific request id.",
         )
-    with col_actions:
-        load = st.button("Load", type="primary")
+    with col_auto:
         auto_load = st.checkbox("Auto-load", value=True)
     with col_limit:
         top = st.number_input(

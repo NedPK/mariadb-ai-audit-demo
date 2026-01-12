@@ -205,20 +205,6 @@ st.markdown(
       radial-gradient(900px 520px at 18% 35%, rgba(0, 168, 232, 0.18), rgba(0,0,0,0) 55%),
       radial-gradient(900px 520px at 60% 25%, rgba(0, 214, 168, 0.12), rgba(0,0,0,0) 60%);
   }
-  .mdb-hero-head { display: flex; align-items: flex-start; gap: 14px; }
-  .mdb-hero-logo {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: rgba(255,255,255,0.85);
-    border: 1px solid rgba(10, 26, 44, 0.10);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-  }
-  .mdb-hero-logo img { width: 34px; height: 34px; object-fit: contain; display: block; }
-  .mdb-hero-body { flex: 1 1 auto; min-width: 0; }
   .mdb-hero h1 { margin: 0.15rem 0 0 0; font-size: 1.55rem; line-height: 1.2; color: rgba(8, 18, 32, 0.96); }
   .mdb-hero p { margin: 0.4rem 0 0 0; color: rgba(8, 18, 32, 0.70); max-width: 900px; }
   .mdb-card {
@@ -247,16 +233,9 @@ st.markdown('<div class="mdb-wrap">', unsafe_allow_html=True)
 st.markdown(
     """
 <div class="mdb-hero">
-  <div class="mdb-hero-head">
-    <div class="mdb-hero-logo">
-      <img src="https://mariadb.com/wp-content/uploads/2019/11/mariadb-logo_black.svg" alt="MariaDB" />
-    </div>
-    <div class="mdb-hero-body">
-      <h1>MariaDB AI Audit</h1>
-      <p>MariaDB Serverless RAG with auditability: MCP tools power the UI; LlamaIndex enforces safe context.</p>
-      <p><b>New here?</b> Read the <a href="https://github.com/NedPK/mariadb-ai-audit-demo/blob/main/DEMO.md" target="_blank" rel="noopener noreferrer">DEMO.md runbook</a> to understand the demo goals and what to try.</p>
-    </div>
-  </div>
+  <h1>MariaDB AI Audit</h1>
+  <p>MariaDB Serverless RAG with auditability: MCP tools power the UI; LlamaIndex enforces safe context.</p>
+  <p><b>New here?</b> Read the <a href="https://github.com/NedPK/mariadb-ai-audit-demo/blob/main/DEMO.md" target="_blank" rel="noopener noreferrer">DEMO.md runbook</a> to understand the demo goals and what to try.</p>
 </div>
 """,
     unsafe_allow_html=True,
@@ -403,10 +382,6 @@ with page_tabs[1]:
         "If you don't see any requests yet, run Ask AI once (auditing must be enabled)."
     )
 
-    st.markdown('<div class="mdb-audit-load">', unsafe_allow_html=True)
-    load = st.button("Load", type="primary")
-    st.markdown("</div>", unsafe_allow_html=True)
-
     col_req, col_auto, col_limit = st.columns([3, 1, 1])
     with col_req:
         request_id_input = st.text_input(
@@ -426,6 +401,10 @@ with page_tabs[1]:
             step=1,
             help="How many recent requests to list.",
         )
+
+    st.markdown('<div class="mdb-audit-load">', unsafe_allow_html=True)
+    load = st.button("Load", type="primary")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     auto_key = "_audit_autoload_done"
     should_load = bool(load) or (

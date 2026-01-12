@@ -250,30 +250,25 @@ with page_tabs[0]:
         "Auditing is available in the 'Audit Browser' tab. Use it to review the request_id, candidates, and exposures for each question."
     )
 
-    st.info("user_id is required for auditing.")
-
-    user_id = st.text_input(
-        "user_id (REQUIRED)",
-        value="",
-        placeholder="e.g. alice@company.com",
-        help=(
-            "Required for the application-level audit trail. We'll log it with each retrieval request so you can "
-            "trace who asked what and when."
-        ),
-    )
-
-    can_submit = bool(user_id.strip())
-    if not can_submit:
-        st.warning("Enter a user_id to continue (required for auditing).")
-        st.stop()
-
     question = st.text_area(
         "Question",
         value="Does ColumnStore supports online schema changes?",
         height=120,
     )
 
-    col_k, col_feature = st.columns([1, 2])
+    st.info("user_id is required for auditing.")
+
+    col_user, col_k = st.columns([2, 1])
+    with col_user:
+        user_id = st.text_input(
+            "user_id (REQUIRED)",
+            value="",
+            placeholder="e.g. alice@company.com",
+            help=(
+                "Required for the application-level audit trail. We'll log it with each retrieval request so you can "
+                "trace who asked what and when."
+            ),
+        )
     with col_k:
         k = st.number_input(
             "Top-k chunks to retrieve",
@@ -287,35 +282,38 @@ with page_tabs[0]:
             ),
         )
 
-    with col_feature:
-        st.caption(
-            "Feature is an audit-trail label for this request (use it to group/filter queries later in Audit Browser). "
-            "It does not change retrieval or model behavior."
+    can_submit = bool(user_id.strip())
+    if not can_submit:
+        st.warning("Enter a user_id to enable Ask AI (required for auditing).")
+
+    st.caption(
+        "Feature is an audit-trail label for demo purposes for this request (use it to group/filter queries later in Audit Browser). "
+        "It does not change retrieval or model behavior."
+    )
+    feature_choice = st.selectbox(
+        "Feature (demo label)",
+        options=[
+            "docs_search",
+            "incident_response",
+            "security_review",
+            "compliance_audit",
+            "support_triage",
+            "Custom…",
+        ],
+        index=0,
+        help=(
+            "This value is stored with each ask_ai request in the audit trail. "
+            "Use it to tag why a question was asked (e.g. support vs security vs compliance) so you can filter/group later."
+        ),
+    )
+    feature = feature_choice
+    if feature_choice == "Custom…":
+        feature = st.text_input(
+            "Custom feature label",
+            value="",
+            placeholder="e.g. my_feature",
+            help="Optional free-form label stored in the audit trail (demo purposes).",
         )
-        feature_choice = st.selectbox(
-            "Feature (demo label)",
-            options=[
-                "docs_search",
-                "incident_response",
-                "security_review",
-                "compliance_audit",
-                "support_triage",
-                "Custom…",
-            ],
-            index=0,
-            help=(
-                "This value is stored with each ask_ai request in the audit trail. "
-                "Use it to tag why a question was asked (e.g. support vs security vs compliance) so you can filter/group later."
-            ),
-        )
-        feature = feature_choice
-        if feature_choice == "Custom…":
-            feature = st.text_input(
-                "Custom feature label",
-                value="",
-                placeholder="e.g. my_feature",
-                help="Optional free-form label stored in the audit trail (demo purposes).",
-            )
 
     if st.button("Run ask_ai", type="primary", disabled=not can_submit):
         try:

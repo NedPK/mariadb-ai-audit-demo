@@ -1,6 +1,6 @@
 # Demo Runbook — MariaDB Cloud AI Audit (Vector Search + MCP)
 
-This is a repeatable 5–10 minute demo of an **application-level AI audit trail** 
+This is a repeatable 5–10 minute demo **runbook** (copy/paste friendly) for an **application-level AI audit trail**.
 
 Purpose:
 
@@ -8,8 +8,8 @@ Purpose:
 - Capture the *AI-specific* facts you actually need for governance and incident response: what was searched, what came back, and what the model saw
 
 - MariaDB Cloud is the **system of record** for documents, chunks, embeddings, and the app-level audit trail
-- similarity search is executed **inside MariaDB** using native vector capabilities (no external vector database)
-- every AI answer has a **forensic trail**: what the user asked, what was retrieved, and what was exposed to the LLM
+- Similarity search is executed **inside MariaDB** using native vector capabilities (no external vector database)
+- Every AI answer has a **forensic trail**: what the user asked, what was retrieved, and what was exposed to the LLM
 
 What you’ll demo:
 

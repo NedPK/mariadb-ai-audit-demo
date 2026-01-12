@@ -163,6 +163,13 @@ st.markdown(
   .stApp, .stMarkdown, .stText, .stTextInput, .stTextArea, .stSelectbox, .stNumberInput {
     color: rgba(8, 18, 32, 0.92);
   }
+  /* Ensure widget labels are visible (some themes render them too light) */
+  label, .stTextInput label, .stTextArea label, .stNumberInput label, .stSelectbox label {
+    color: rgba(8, 18, 32, 0.82) !important;
+  }
+  [data-testid="stWidgetLabel"], [data-testid="stMarkdownContainer"] label {
+    color: rgba(8, 18, 32, 0.82) !important;
+  }
   .mdb-topbar {
     display: flex;
     align-items: center;
@@ -243,27 +250,30 @@ with page_tabs[0]:
         "Auditing is available in the 'Audit Browser' tab. Use it to review the request_id, candidates, and exposures for each question."
     )
 
+    st.info("user_id is required for auditing.")
+
+    user_id = st.text_input(
+        "user_id (REQUIRED)",
+        value="",
+        placeholder="e.g. alice@company.com",
+        help=(
+            "Required for the application-level audit trail. We'll log it with each retrieval request so you can "
+            "trace who asked what and when."
+        ),
+    )
+
+    can_submit = bool(user_id.strip())
+    if not can_submit:
+        st.warning("Enter a user_id to continue (required for auditing).")
+        st.stop()
+
     question = st.text_area(
         "Question",
         value="Does ColumnStore supports online schema changes?",
         height=120,
     )
 
-    st.info(
-        "user_id is required for auditing. Ask AI is disabled until you provide it."
-    )
-
-    col_user, col_k = st.columns([2, 1])
-    with col_user:
-        user_id = st.text_input(
-            "user_id (REQUIRED)",
-            value="",
-            placeholder="e.g. alice@company.com",
-            help=(
-                "Required for the application-level audit trail. We'll log it with each retrieval request so you can "
-                "trace who asked what and when."
-            ),
-        )
+    col_k, col_feature = st.columns([1, 2])
     with col_k:
         k = st.number_input(
             "Top-k chunks to retrieve",
@@ -277,34 +287,31 @@ with page_tabs[0]:
             ),
         )
 
-    st.caption(
-        "Feature is demo-only metadata: it is stored in the audit trail for grouping/filtering. "
-        "It does not change model behavior."
-    )
-    feature_choice = st.selectbox(
-        "Feature (demo label)",
-        options=[
-            "docs_search",
-            "incident_response",
-            "security_review",
-            "compliance_audit",
-            "support_triage",
-            "Custom…",
-        ],
-        index=0,
-    )
-    feature = feature_choice
-    if feature_choice == "Custom…":
-        feature = st.text_input(
-            "Custom feature label",
-            value="",
-            placeholder="e.g. my_feature",
-            help="Optional free-form label stored in the audit trail (demo purposes).",
+    with col_feature:
+        st.caption(
+            "Feature is demo-only metadata: it is stored in the audit trail for grouping/filtering. "
+            "It does not change model behavior."
         )
-
-    can_submit = bool(user_id.strip())
-    if not can_submit:
-        st.warning("Enter a user_id to enable Ask AI (required for auditing).")
+        feature_choice = st.selectbox(
+            "Feature (demo label)",
+            options=[
+                "docs_search",
+                "incident_response",
+                "security_review",
+                "compliance_audit",
+                "support_triage",
+                "Custom…",
+            ],
+            index=0,
+        )
+        feature = feature_choice
+        if feature_choice == "Custom…":
+            feature = st.text_input(
+                "Custom feature label",
+                value="",
+                placeholder="e.g. my_feature",
+                help="Optional free-form label stored in the audit trail (demo purposes).",
+            )
 
     if st.button("Run ask_ai", type="primary", disabled=not can_submit):
         try:
@@ -338,10 +345,10 @@ with page_tabs[0]:
             st.write(result)
         else:
             st.success("Done")
-            st.write({"request_id": result.get("request_id"), "k": result.get("k")})
-
             st.markdown("### Answer")
             st.write(result.get("answer"))
+
+            st.caption(f"request_id={result.get('request_id')} • k={result.get('k')}")
 
             chunks = result.get("chunks")
             st.markdown("### Chunks")

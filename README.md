@@ -1,11 +1,20 @@
 # MariaDB AI Audit Demo
 
-A small demo app showing **in-database vector search + auditable RAG** on MariaDB.
+A small demo app showing how to use **MariaDB in a modern, security/compliance-first AI app**: in-database vector search + RAG, with an application-level audit trail.
 
 - **MariaDB** is the system of record for documents, chunks, embeddings, and the app-level audit trail.
 - **MCP** exposes the capabilities as tools (`ask_ai`, `list_audit_requests`, `get_audit_details`).
 - **Streamlit** provides a lightweight “copilot-like” UI over MCP.
 - **LlamaIndex** is used for ingestion (optional) and safe prompt/context shaping.
+
+## Default: try the hosted demo (no local install)
+
+- [nedpk-mariadb-ai-audit-demo.streamlit.app](https://nedpk-mariadb-ai-audit-demo.streamlit.app)
+
+The app has two tabs:
+
+- **Ask AI**: submit a question (requires `user_id`). The server retrieves top-k chunks from MariaDB vector search, applies an exposure policy (filtering/DLP), then calls the LLM. The response includes the `request_id` you can audit.
+- **Audit Browser**: browse recent retrieval requests and drill into candidates and exposures (including policy decisions) captured by the application-level audit trail.
 
 ## What this demo does
 
@@ -29,16 +38,9 @@ A small demo app showing **in-database vector search + auditable RAG** on MariaD
   - Streamlit UI (Ask AI + Audit Browser) over MCP.
   - Ingest with a minimal built-in ingestor or an optional LlamaIndex-based pipeline.
 
-## Hosted demo (no local install)
+## Optional: run locally
 
-If you just want to try the demo UI, open:
-
-- [nedpk-mariadb-ai-audit-demo.streamlit.app](https://nedpk-mariadb-ai-audit-demo.streamlit.app)
-
-The app has two tabs:
-
-- **Ask AI**: submit a question (requires `user_id`). The server retrieves top-k chunks from MariaDB vector search, applies an exposure policy (filtering/DLP), then calls the LLM. The response includes the `request_id` you can audit.
-- **Audit Browser**: browse recent retrieval requests and drill into candidates and exposures (including policy decisions) captured by the application-level audit trail.
+Use this section if you want to run your own MCP server, ingest your own documents, or modify the demo.
 
 ## Repository setup
 

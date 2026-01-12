@@ -289,8 +289,8 @@ with page_tabs[0]:
 
     with col_feature:
         st.caption(
-            "Feature is demo-only metadata: it is stored in the audit trail for grouping/filtering. "
-            "It does not change model behavior."
+            "Feature is an audit-trail label for this request (use it to group/filter queries later in Audit Browser). "
+            "It does not change retrieval or model behavior."
         )
         feature_choice = st.selectbox(
             "Feature (demo label)",
@@ -303,6 +303,10 @@ with page_tabs[0]:
                 "Custom…",
             ],
             index=0,
+            help=(
+                "This value is stored with each ask_ai request in the audit trail. "
+                "Use it to tag why a question was asked (e.g. support vs security vs compliance) so you can filter/group later."
+            ),
         )
         feature = feature_choice
         if feature_choice == "Custom…":

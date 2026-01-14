@@ -217,6 +217,13 @@ st.markdown(
   .mdb-section-title { margin: 0; font-size: 1.05rem; font-weight: 650; }
   .mdb-muted { color: rgba(8, 18, 32, 0.68); font-size: 0.9rem; }
   .stButton>button { border-radius: 10px; }
+  div[data-baseweb="tab-list"] button {
+    font-weight: 750;
+    font-size: 1.05rem;
+  }
+  div[data-baseweb="tab-list"] button[aria-selected="true"] {
+    font-weight: 850;
+  }
   .mdb-audit-load .stButton>button {
     font-size: 1.05rem;
     padding: 0.55rem 1.1rem;
@@ -266,7 +273,7 @@ with page_tabs[0]:
     col_user, col_k = st.columns([2, 1])
     with col_user:
         user_id = st.text_input(
-            "user_id (REQUIRED)",
+            "user_id (REQUIRED is required for auditing)",
             value="",
             placeholder="e.g. alice@company.com",
             help=(

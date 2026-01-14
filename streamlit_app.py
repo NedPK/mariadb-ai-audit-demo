@@ -2,6 +2,7 @@ import asyncio
 import dataclasses
 import os
 import sys
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -49,9 +50,48 @@ def _setting(name: str, default: str) -> str:
 DEFAULT_MCP_URL = _setting("MCP_URL", "http://127.0.0.1:8000/mcp")
 MCP_MODE = _setting("MCP_MODE", "http").strip().lower()
 
+ENABLE_DB_KEEPALIVE = _setting("ENABLE_DB_KEEPALIVE", "0").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "on",
+)
+DB_KEEPALIVE_INTERVAL_SECONDS = int(
+    _setting("DB_KEEPALIVE_INTERVAL_SECONDS", "900").strip()
+)
+
 _SRC = Path(__file__).resolve().parent / "src"
-if MCP_MODE == "direct" and str(_SRC) not in sys.path:
+if (MCP_MODE == "direct" or ENABLE_DB_KEEPALIVE) and str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
+
+
+@st.cache_resource
+def _start_db_keepalive() -> bool:
+    from mariadb_ai_audit.config import ConfigError, load_mariadb_config
+    from mariadb_ai_audit.db import healthcheck
+    from mariadb_ai_audit.dotenv import load_dotenv
+
+    load_dotenv((".env.local", ".env"), override=True)
+
+    try:
+        cfg = load_mariadb_config()
+    except ConfigError:
+        return False
+
+    interval = max(1, int(DB_KEEPALIVE_INTERVAL_SECONDS))
+    stop = threading.Event()
+
+    def _loop() -> None:
+        while not stop.is_set():
+            try:
+                healthcheck(cfg)
+            except Exception:
+                pass
+            stop.wait(interval)
+
+    t = threading.Thread(target=_loop, name="db-keepalive", daemon=True)
+    t.start()
+    return True
 
 
 def _run(coro):
@@ -148,6 +188,12 @@ def _render_tool_error(exc: ToolError) -> None:
 
 
 st.set_page_config(page_title="MariaDB AI Audit", layout="wide")
+
+if ENABLE_DB_KEEPALIVE:
+    try:
+        _start_db_keepalive()
+    except Exception:
+        pass
 
 st.markdown(
     """

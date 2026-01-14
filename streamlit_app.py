@@ -266,9 +266,11 @@ st.markdown(
   div[data-baseweb="tab-list"] button {
     font-weight: 800 !important;
     font-size: 1.15rem !important;
+    color: rgba(8, 18, 32, 0.85) !important;
   }
   div[data-baseweb="tab-list"] button[aria-selected="true"] {
     font-weight: 900 !important;
+    color: rgba(8, 18, 32, 0.95) !important;
   }
   .mdb-audit-load .stButton>button {
     font-size: 1.05rem;

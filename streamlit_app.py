@@ -340,10 +340,6 @@ with page_tabs[0]:
             ),
         )
 
-    can_submit = bool(user_id.strip())
-    if not can_submit:
-        st.warning("Enter a user_id to enable Ask AI (required for auditing).")
-
     st.caption(
         "Feature is an audit-trail label for demo purposes for this request (use it to group/filter queries later in Audit Browser). "
         "It does not change retrieval or model behavior."
@@ -373,7 +369,12 @@ with page_tabs[0]:
             help="Optional free-form label stored in the audit trail (demo purposes).",
         )
 
-    if st.button("Run ask_ai", type="primary", disabled=not can_submit):
+    if st.button("Run ask_ai", type="primary"):
+        if not user_id.strip():
+            st.error(
+                "Please enter a user_id in the field above (required for auditing)."
+            )
+            st.stop()
         try:
             with st.spinner("Calling ask_ai..."):
                 result = _run(

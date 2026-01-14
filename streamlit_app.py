@@ -460,12 +460,8 @@ with page_tabs[1]:
     load = st.button("Load", type="primary")
     st.markdown("</div>", unsafe_allow_html=True)
 
-    auto_key = "_audit_autoload_done"
-    should_load = bool(load) or (
-        bool(auto_load) and not bool(st.session_state.get(auto_key, False))
-    )
+    should_load = bool(load) or bool(auto_load)
     if should_load:
-        st.session_state[auto_key] = True
         try:
             with st.spinner("Loading audit requests..."):
                 requests = _run(
